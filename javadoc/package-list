@@ -8,6 +8,7 @@ org.mockito.internal
 org.mockito.internal.creation
 org.mockito.internal.invocation
 org.mockito.internal.matchers
+org.mockito.internal.matchers.apachecommons
 org.mockito.internal.progress
 org.mockito.internal.stubbing
 org.mockito.internal.util
