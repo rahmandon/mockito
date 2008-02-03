@@ -13,7 +13,8 @@ import org.mockito.InOrder;
 import org.mockito.RequiresValidState;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.mockito.exceptions.verification.TooManyActualInvocations;
-import org.mockito.exceptions.verification.VerifcationInOrderFailed;
+import org.mockito.exceptions.verification.VerifcationInOrderFailure;
+import org.mockito.exceptions.verification.WantedButNotInvoked;
 import org.mockitousage.IMethods;
 
 /**
@@ -104,7 +105,7 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockThree).simpleMethod(3);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
     
     @Test
@@ -116,7 +117,7 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         } catch (NoInteractionsWanted e) {}
     }
     
-    @Test(expected=VerifcationInOrderFailed.class)
+    @Test(expected=VerifcationInOrderFailure.class)
     public void shouldFailVerificationOfNonFirstChunk() {
         inOrder.verify(mockTwo, times(1)).simpleMethod(2);
     }
@@ -181,7 +182,7 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         inOrder.verify(mockTwo, atLeastOnce()).simpleMethod(2);
     }
     
-    @Test(expected=VerifcationInOrderFailed.class)
+    @Test(expected=WantedButNotInvoked.class)
     public void shouldFailOnWrongMethodCalledOnMockTwo() {
         inOrder.verify(mockTwo, atLeastOnce()).differentMethod();
     }
@@ -203,10 +204,10 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockThree, times(0)).simpleMethod(3);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
     
-    @Test(expected=VerifcationInOrderFailed.class)
+    @Test(expected=VerifcationInOrderFailure.class)
     public void shouldFailWhenMockTwoWantedZeroTimes() {
         inOrder.verify(mockTwo, times(0)).simpleMethod(2);
     }
@@ -234,7 +235,7 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockTwo, atLeastOnce()).simpleMethod(2);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
     
     @Test
@@ -243,7 +244,7 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne).simpleMethod(1);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
     
     @Test
@@ -252,6 +253,6 @@ public class RelaxedVerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne).simpleMethod(999);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
 }

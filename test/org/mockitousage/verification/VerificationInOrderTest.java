@@ -10,11 +10,11 @@ import static org.mockito.Mockito.*;
 import static org.mockito.util.ExtraMatchers.*;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.RequiresValidState;
-import org.mockito.exceptions.verification.VerifcationInOrderFailed;
+import org.mockito.exceptions.verification.VerifcationInOrderFailure;
+import org.mockito.exceptions.verification.WantedButNotInvoked;
 import org.mockitousage.IMethods;
 
 @SuppressWarnings("unchecked")  
@@ -49,10 +49,9 @@ public class VerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne).simpleMethod(1);
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     } 
     
-    @Ignore
     @Test
     public void shouldMessagesPointToProperMethod() {
         mockTwo.differentMethod();
@@ -61,9 +60,8 @@ public class VerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne, atLeastOnce()).differentMethod();
             fail();
-        } catch (VerifcationInOrderFailed e) {
+        } catch (WantedButNotInvoked e) {
             assertThat(e, messageContains("IMethods.differentMethod()"));
-            assertThat(e, causeMessageContains("IMethods.differentMethod()"));
         }
     }
     
@@ -81,7 +79,7 @@ public class VerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne, atLeastOnce()).simpleMethod();
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
     
     @Test
@@ -100,6 +98,6 @@ public class VerificationInOrderTest extends RequiresValidState {
         try {
             inOrder.verify(mockOne, times(3)).simpleMethod(anyInt());
             fail();
-        } catch (VerifcationInOrderFailed e) {}
+        } catch (VerifcationInOrderFailure e) {}
     }
 }

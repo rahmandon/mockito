@@ -11,9 +11,9 @@ import static org.mockito.internal.progress.VerificationModeImpl.*;
 import java.util.LinkedList;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.RequiresValidState;
+import org.mockito.exceptions.Printable;
 import org.mockito.exceptions.Reporter;
 import org.mockito.exceptions.base.HasStackTrace;
 import org.mockito.internal.invocation.Invocation;
@@ -21,7 +21,6 @@ import org.mockito.internal.invocation.InvocationBuilder;
 import org.mockito.internal.invocation.InvocationMatcher;
 import org.mockito.internal.progress.VerificationModeBuilder;
 
-@Ignore
 public class MissingInvocationInOrderVerifierTest extends RequiresValidState {
 
     private MissingInvocationInOrderVerifier verifier;
@@ -46,37 +45,46 @@ public class MissingInvocationInOrderVerifierTest extends RequiresValidState {
     }
     
     @Test
+    public void shouldPassWhenMatchingInteractionFound() throws Exception {
+        Invocation actual = new InvocationBuilder().toInvocation();
+        finderStub.allMatchingUnverifiedChunksToReturn.add(actual);
+        
+        verifier.verify(invocations, wanted, new VerificationModeBuilder().inOrder());
+    }
+    
+    @Test
     public void shouldReportWantedButNotInvoked() throws Exception {
-        assertTrue(finderStub.firstUnverifiedChunkToReturn.isEmpty());
+        assertTrue(finderStub.allMatchingUnverifiedChunksToReturn.isEmpty());
         verifier.verify(invocations, wanted, new VerificationModeBuilder().inOrder());
         
-        assertEquals(wanted.toString(), reporterStub.wanted);
+        assertEquals(wanted, reporterStub.wanted);
     }
     
     @Test
     public void shouldReportWantedDiffersFromActual() throws Exception {
-        Invocation different = new InvocationBuilder().differentMethod().toInvocation();
-        finderStub.firstUnverifiedChunkToReturn.add(different);
+        Invocation previous = new InvocationBuilder().toInvocation();
+        finderStub.previousInOrderToReturn = previous;
+        
         verifier.verify(invocations, wanted, new VerificationModeBuilder().inOrder());
         
-        assertEquals(wanted.toString(), reporterStub.wanted);
-        assertEquals(different.toString(), reporterStub.actual);
-        assertSame(different.getStackTrace(), reporterStub.actualInvocationStackTrace);
+        assertEquals(wanted, reporterStub.wanted);
+        assertEquals(previous, reporterStub.previous);
+        assertSame(previous.getStackTrace(), reporterStub.previousStackTrace);
     }
     
     class ReporterStub extends Reporter {
-        private String wanted;
-        private String actual;
-        private HasStackTrace actualInvocationStackTrace;
-
-        @Override public void wantedButNotInvokedInOrder(Object wanted, Object previous, HasStackTrace lastVerifiedInOrder) {
-            this.wanted = wanted.toString();
+        private Printable wanted;
+        private Printable previous;
+        private HasStackTrace previousStackTrace;
+        
+        @Override public void wantedButNotInvokedInOrder(Printable wanted, Printable previous, HasStackTrace previousStackTrace) {
+            this.wanted = wanted;
+            this.previous = previous;
+            this.previousStackTrace = previousStackTrace;
         }
         
-        @Override public void wantedDiffersFromActualInOrder(String wanted, String actual, HasStackTrace actualInvocationStackTrace) {
+        @Override public void wantedButNotInvoked(Printable wanted) {
             this.wanted = wanted;
-            this.actual = actual;
-            this.actualInvocationStackTrace = actualInvocationStackTrace;
         }
     }
 }

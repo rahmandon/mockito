@@ -19,7 +19,7 @@ import org.mockito.exceptions.verification.InvocationDiffersFromActual;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.mockito.exceptions.verification.TooLittleActualInvocations;
 import org.mockito.exceptions.verification.TooManyActualInvocations;
-import org.mockito.exceptions.verification.VerifcationInOrderFailed;
+import org.mockito.exceptions.verification.VerifcationInOrderFailure;
 import org.mockito.exceptions.verification.WantedButNotInvoked;
 
 /**
@@ -100,10 +100,10 @@ public class Reporter {
         ));
     }
 
-    public void wantedDiffersFromActual(String wanted, String actual, HasStackTrace actualInvocationStackTrace) {
+    public void wantedDiffersFromActual(Printable wanted, Printable actual, HasStackTrace actualInvocationStackTrace) {
         WantedDiffersFromActual cause1 = new WantedDiffersFromActual(join(
                 "Actual invocation:",
-                actual
+                actual.toString()
             ));
         
         cause1.setStackTrace(actualInvocationStackTrace.getStackTrace());
@@ -112,70 +112,45 @@ public class Reporter {
         throw new InvocationDiffersFromActual(join(
                 "Invocation differs from actual",
                 "Wanted invocation:",
-                wanted
+                wanted.toString()
             ), cause);
     }
     
-    public void wantedDiffersFromActualInOrder(String wanted, String actual, HasStackTrace actualInvocationStackTrace) {
-        WantedDiffersFromActual cause1 = new WantedDiffersFromActual(join(
-                "Actual invocation in order:",
-                actual
-            ));
-        
-        cause1.setStackTrace(actualInvocationStackTrace.getStackTrace());
-        WantedDiffersFromActual cause = cause1;
-
-        throw new VerifcationInOrderFailed(join(
-                "Verification in order failed",
-                "Wanted invocation:",
-                wanted
-            ), cause);
-    }
-
-    public void wantedButNotInvoked(String wanted) {
+    public void wantedButNotInvoked(Printable wanted) {
         throw new WantedButNotInvoked(join(
                     "Wanted but not invoked:",
-                    wanted
+                    wanted.toString()
         ));
     }
     
-    //TODO do something about those objects (Printable object)
-    public void wantedButNotInvokedInOrder(Object wanted, Object previous, HasStackTrace previousInOrder) {
+    public void wantedButNotInvokedInOrder(Printable wanted, Printable previous, HasStackTrace previousStackTrace) {
         WantedAnywhereAfterFollowingInteraction cause = new WantedAnywhereAfterFollowingInteraction(join(
                         "Wanted anywhere AFTER following interaction:",
                         previous.toString()));
-        cause.setStackTrace(previousInOrder.getStackTrace());
+        cause.setStackTrace(previousStackTrace.getStackTrace());
         
-        throw new VerifcationInOrderFailed(join(
-                    "Verification in order failed",
+        throw new VerifcationInOrderFailure(join(
+                    "Verification in order failure",
                     "Wanted but not invoked:",
                     wanted.toString()
         ), cause);
     }
-    
-    public void wantedButNotInvokedInOrder(Object wanted) {
-        throw new VerifcationInOrderFailed(join(
-                    "Verification in order failed",
-                    "Wanted but not invoked:",
-                    wanted.toString()
-        ));
-    }
 
-    public void tooManyActualInvocations(int wantedCount, int actualCount, String wanted, HasStackTrace firstUndesired) {
+    public void tooManyActualInvocations(int wantedCount, int actualCount, Printable wanted, HasStackTrace firstUndesired) {
         UndesiredInvocation cause = createUndesiredInvocationCause(firstUndesired);
 
         throw new TooManyActualInvocations(join(
-                wanted,
+                wanted.toString(),
                 "Wanted " + pluralize(wantedCount) + " but was " + actualCount
         ), cause);
     }
     
-    public void tooManyActualInvocationsInOrder(int wantedCount, int actualCount, String wanted, HasStackTrace firstUndesired) {
+    public void tooManyActualInvocationsInOrder(int wantedCount, int actualCount, Printable wanted, HasStackTrace firstUndesired) {
         UndesiredInvocation cause = createUndesiredInvocationCause(firstUndesired);
 
-        throw new VerifcationInOrderFailed(join(
-                "Verification in order failed",
-                wanted,
+        throw new VerifcationInOrderFailure(join(
+                "Verification in order failure",
+                wanted.toString(),
                 "Wanted " + pluralize(wantedCount) + " but was " + actualCount
         ), cause);
     }
@@ -186,22 +161,22 @@ public class Reporter {
         return cause;
     }    
 
-    public void tooLittleActualInvocations(int wantedCount, int actualCount, String wanted, HasStackTrace lastActualInvocationStackTrace) {
+    public void tooLittleActualInvocations(int wantedCount, int actualCount, Printable wanted, HasStackTrace lastActualInvocationStackTrace) {
         TooLittleInvocations cause = createTooLittleInvocationsCause(lastActualInvocationStackTrace);
 
         throw new TooLittleActualInvocations(join(
-                wanted,
+                wanted.toString(),
                 "Wanted " + pluralize(wantedCount) + " but was " + actualCount
         ), cause);
     }
 
     
-    public void tooLittleActualInvocationsInOrder(int wantedCount, int actualCount, String wanted, HasStackTrace lastActualStackTrace) {
+    public void tooLittleActualInvocationsInOrder(int wantedCount, int actualCount, Printable wanted, HasStackTrace lastActualStackTrace) {
         TooLittleInvocations cause = createTooLittleInvocationsCause(lastActualStackTrace);
 
-        throw new VerifcationInOrderFailed(join(
-                "Verification in order failed",
-                wanted,
+        throw new VerifcationInOrderFailure(join(
+                "Verification in order failure",
+                wanted.toString(),
                 "Wanted " + pluralize(wantedCount) + " but was " + actualCount
         ), cause);
     }
@@ -215,10 +190,10 @@ public class Reporter {
         return cause;
     }
 
-    public void noMoreInteractionsWanted(String undesired, HasStackTrace actualInvocationStackTrace) {
+    public void noMoreInteractionsWanted(Printable undesired, HasStackTrace actualInvocationStackTrace) {
         UndesiredInvocation cause = new UndesiredInvocation(join(
                 "Undesired invocation:", 
-                undesired
+                undesired.toString()
         ));
         
         cause.setStackTrace(actualInvocationStackTrace.getStackTrace());
