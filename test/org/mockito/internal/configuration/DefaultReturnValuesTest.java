@@ -75,10 +75,10 @@ public class DefaultReturnValuesTest extends TestBase {
         
         HasPrimitives mock = Mockito.mock(HasPrimitives.class);
         assertThat(mock.booleanMethod(), is(false));
-        assertThat(mock.charMethod(), is((char) 0));
-        assertThat(mock.intMethod(), is((int) 0));
-        assertThat(mock.longMethod(), is((long) 0));
-        assertThat(mock.floatMethod(), is((float) 0));
-        assertThat(mock.doubleMethod(), is((double) 0));
+        assertThat(mock.charMethod(), is((char)0));
+        assertThat(mock.intMethod(), is((int)0));
+        assertThat(mock.longMethod(), is((long)0));
+        assertThat(mock.floatMethod(), is((float)0));
+        assertThat(mock.doubleMethod(), is((double)0));
     }
 }

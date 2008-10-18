@@ -438,7 +438,7 @@ public class Mockito extends Matchers {
      * @return mock object
      */
     public static <T> T mock(Class<T> classToMock) {
-        return mock(classToMock, (String) null);
+        return mock(classToMock, (String)null);
     }
     
     /**
@@ -470,7 +470,7 @@ public class Mockito extends Matchers {
      * @return mock object
      */
     public static <T> T mock(Class<T> classToMock, ReturnValues returnValues) {
-        return mock(classToMock, null, (T) null, returnValues);
+        return mock(classToMock, null, (T)null, returnValues);
     }
     
     private static <T> T mock(Class<T> classToMock, String name, T delegate, ReturnValues returnValues) {

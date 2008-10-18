@@ -1,0 +1,902 @@
+
+Property changes on: .
+___________________________________________________________________
+Modified: svn:ignore
+   - target
+.djunitplugin
+jcoverage.ser
+
+   + target
+.djunitplugin
+jcoverage.ser
+.hg
+.hgignore
+
+
+Index: test/org/mockitoutil/TestBase.java
+===================================================================
+--- test/org/mockitoutil/TestBase.java	(revision 939)
++++ test/org/mockitoutil/TestBase.java	(working copy)
+@@ -10,6 +10,7 @@
+ import org.junit.Before;
+ import org.mockito.MockitoAnnotations;
+ import org.mockito.StateMaster;
++import org.mockito.configuration.experimental.ConfigurationSupport;
+ 
+ /**
+  * the easiest way to make sure that tests clean up invalid state is to require
+@@ -20,6 +21,7 @@
+     @Before
+     public void init() {
+         StateMaster.validate();
++        ConfigurationSupport.getConfiguration().resetReturnValues();
+         MockitoAnnotations.initMocks(this);
+     }
+     
+Index: test/org/mockito/internal/returnvalues/SmartNullReturnValuesTest.java
+===================================================================
+--- test/org/mockito/internal/returnvalues/SmartNullReturnValuesTest.java	(revision 0)
++++ test/org/mockito/internal/returnvalues/SmartNullReturnValuesTest.java	(revision 0)
+@@ -0,0 +1,58 @@
++package org.mockito.internal.returnvalues;
++
++import java.util.Arrays;
++import java.util.List;
++
++import org.junit.Test;
++import org.mockito.configuration.ReturnValues;
++import org.mockito.exceptions.verification.SmartNullPointerException;
++import org.mockito.internal.invocation.Invocation;
++import org.mockitoutil.TestBase;
++
++
++public class SmartNullReturnValuesTest extends TestBase {
++    interface HasPrimitiveMethods {
++        boolean booleanMethod();
++        char charMethod();
++        int intMethod();
++        long longMethod();
++        float floatMethod();
++        double doubleMethod();
++    }
++
++    private Invocation invocationOf(Class<?> type, String methodName) throws NoSuchMethodException {
++        return new Invocation(new Object(), type.getMethod(methodName, new Class[0]), new Object[0], 1);
++    }
++    
++    @Test
++    public void shouldReturnTheUsualDefaultValuesForPrimitives() throws Exception {
++        SmartNullReturnValues returnValues = new SmartNullReturnValues();
++        assertEquals(false  , returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "booleanMethod")));
++        assertEquals((char)0, returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "charMethod")));
++        assertEquals(0,       returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "intMethod")));
++        assertEquals(0,       returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "longMethod")));
++        assertEquals(0,       returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "floatMethod")));
++        assertEquals(0,       returnValues.valueFor(invocationOf(HasPrimitiveMethods.class, "doubleMethod")));
++    }
++    
++    interface HasInterfaceMethod {
++        List<String> doListStuff();
++    }
++    
++    @Test
++    public void shouldReturnAnObjectThatFailsOnAnyMethodInvocationForNonPrimitives() throws Exception {
++        ReturnValues returnValues = new SmartNullReturnValues();
++        
++        @SuppressWarnings("unchecked")
++        List<String> smartNull = (List<String>) returnValues.valueFor(invocationOf(HasInterfaceMethod.class, "doListStuff"));
++        
++        try {
++            smartNull.iterator();
++            fail("should have thrown exception");
++        }
++        catch (SmartNullPointerException expected) {
++            expected.printStackTrace();
++            System.out.println(Arrays.asList(expected.getUnfilteredStackTrace()).toString().replaceAll(",", "\n"));
++        }
++    }
++}
+Index: test/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValuesTest.java
+===================================================================
+--- test/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValuesTest.java	(revision 0)
++++ test/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValuesTest.java	(revision 0)
+@@ -0,0 +1,33 @@
++package org.mockito.internal.returnvalues;
++
++import org.junit.Test;
++import org.mockito.Mockito;
++import org.mockito.configuration.experimental.ConfigurationSupport;
++import org.mockitoutil.TestBase;
++
++
++public class UsingGlobalConfigReturnValuesTest extends TestBase {
++    
++    public enum Cheese { Edam, Cheddar }
++    
++    interface CheeseShop {
++        Cheese getCheese();
++    }
++    
++    @Test
++    public void shouldUseCurrentlyConfiguredReturnValuesEvenIfTheyChangeAtRuntime() throws Exception {
++        HardCodedReturnValues returnsEdam = new HardCodedReturnValues(Cheese.Edam);
++        HardCodedReturnValues returnsCheddar = new HardCodedReturnValues(Cheese.Cheddar);
++        CheeseShop mockShop = Mockito.mock(CheeseShop.class, new UsingGlobalConfigReturnValues());
++        
++        ConfigurationSupport.getConfiguration().setReturnValues(returnsEdam);
++        
++        // shop returns Edam
++        assertEquals(Cheese.Edam, mockShop.getCheese());
++        
++        ConfigurationSupport.getConfiguration().setReturnValues(returnsCheddar);
++        
++        // same shop now returns Cheddar
++        assertEquals(Cheese.Cheddar, mockShop.getCheese());
++    }
++}
+Index: test/org/mockito/internal/returnvalues/HardCodedReturnValues.java
+===================================================================
+--- test/org/mockito/internal/returnvalues/HardCodedReturnValues.java	(revision 0)
++++ test/org/mockito/internal/returnvalues/HardCodedReturnValues.java	(revision 0)
+@@ -0,0 +1,16 @@
++package org.mockito.internal.returnvalues;
++
++import org.mockito.configuration.ReturnValues;
++import org.mockito.invocation.InvocationOnMock;
++
++public class HardCodedReturnValues implements ReturnValues {
++    private final Object customResult;
++
++    public HardCodedReturnValues(Object customResult) {
++        this.customResult = customResult;
++    }
++
++    public Object valueFor(InvocationOnMock invocation) {
++        return customResult;
++    }
++}
+\ No newline at end of file
+Index: test/org/mockito/internal/configuration/DefaultReturnValuesTest.java
+===================================================================
+--- test/org/mockito/internal/configuration/DefaultReturnValuesTest.java	(revision 939)
++++ test/org/mockito/internal/configuration/DefaultReturnValuesTest.java	(working copy)
+@@ -20,8 +20,11 @@
+ import java.util.TreeSet;
+ 
+ import org.junit.Test;
++import org.mockito.Mockito;
+ import org.mockitoutil.TestBase;
+ 
++import static org.hamcrest.CoreMatchers.*;
++
+ public class DefaultReturnValuesTest extends TestBase {
+     
+     @SuppressWarnings("unchecked")
+@@ -49,6 +52,15 @@
+         assertNull(values.returnValueFor(String.class));
+     }
+     
++    interface HasPrimitives {
++        boolean booleanMethod();
++        char charMethod();
++        int intMethod();
++        long longMethod();
++        float floatMethod();
++        double doubleMethod();
++    }
++    
+     @Test public void shouldReturnPrimitive() {
+         DefaultReturnValues values = new DefaultReturnValues();
+         
+@@ -60,5 +72,13 @@
+         assertEquals(0, values.returnValueFor(Long.TYPE));
+         assertEquals(0, values.returnValueFor(Float.TYPE));
+         assertEquals(0, values.returnValueFor(Double.TYPE));
++        
++        HasPrimitives mock = Mockito.mock(HasPrimitives.class);
++        assertThat(mock.booleanMethod(), is(false));
++        assertThat(mock.charMethod(), is((char)0));
++        assertThat(mock.intMethod(), is((int)0));
++        assertThat(mock.longMethod(), is((long)0));
++        assertThat(mock.floatMethod(), is((float)0));
++        assertThat(mock.doubleMethod(), is((double)0));
+     }
+ }
+Index: test/org/mockito/internal/util/MockUtilTest.java
+===================================================================
+--- test/org/mockito/internal/util/MockUtilTest.java	(revision 939)
++++ test/org/mockito/internal/util/MockUtilTest.java	(working copy)
+@@ -4,6 +4,8 @@
+  */
+ package org.mockito.internal.util;
+ 
++import static org.hamcrest.CoreMatchers.*;
++
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+@@ -12,16 +14,18 @@
+ 
+ import org.junit.Test;
+ import org.mockito.Mockito;
++import org.mockito.configuration.ReturnValues;
+ import org.mockito.exceptions.base.MockitoException;
+ import org.mockito.exceptions.misusing.NotAMockException;
++import org.mockito.internal.progress.MockingProgressImpl;
++import org.mockito.invocation.InvocationOnMock;
+ import org.mockitoutil.TestBase;
+ 
+ public class MockUtilTest extends TestBase {
+ 
+-    @SuppressWarnings("unchecked")
+     @Test 
+     public void shouldGetHandler() {
+-        List mock = Mockito.mock(List.class);
++        List<?> mock = Mockito.mock(List.class);
+         assertNotNull(MockUtil.getMockHandler(mock));
+     }
+ 
+@@ -49,4 +53,18 @@
+         assertFalse(MockUtil.isMock("i mock a mock"));
+         assertTrue(MockUtil.isMock(Mockito.mock(List.class)));
+     }
++    
++    public static class CustomReturnValues implements ReturnValues {
++        public final String customResult = "custom result";
++        public Object valueFor(InvocationOnMock invocation) {
++            return customResult;
++        }
++    }
++    
++    @Test
++    public void shouldUseCustomReturnValues() throws Exception {
++        CustomReturnValues returnValues = new CustomReturnValues();
++        List<?> mock = MockUtil.createMock(List.class, new MockingProgressImpl(), null, null, returnValues);
++        assertThat(mock.toString(), is("custom result"));
++    }
+ }
+Index: test/org/mockitousage/examples/configure/eachmock/ConfiguringReturnValuesForEachMockTest.java
+===================================================================
+--- test/org/mockitousage/examples/configure/eachmock/ConfiguringReturnValuesForEachMockTest.java	(revision 0)
++++ test/org/mockitousage/examples/configure/eachmock/ConfiguringReturnValuesForEachMockTest.java	(revision 0)
+@@ -0,0 +1,24 @@
++package org.mockitousage.examples.configure.eachmock;
++
++import static org.junit.Assert.*;
++import static org.hamcrest.CoreMatchers.*;
++import static org.mockito.Mockito.*;
++
++import org.junit.Test;
++import org.mockito.internal.returnvalues.HardCodedReturnValues;
++
++
++public class ConfiguringReturnValuesForEachMockTest {
++    public static interface DoesSomething {
++        public Object doSomething();
++    }
++    
++    @Test
++    public void createsMockWithCustomReturnValues() throws Exception {
++        final Object customResult = new Object();
++        DoesSomething mock = mock(DoesSomething.class, new HardCodedReturnValues(customResult));
++        
++        Object result = mock.doSomething();
++        assertThat(result, is(customResult));
++    }
++}
+Index: src/org/mockito/exceptions/verification/SmartNullPointerException.java
+===================================================================
+--- src/org/mockito/exceptions/verification/SmartNullPointerException.java	(revision 0)
++++ src/org/mockito/exceptions/verification/SmartNullPointerException.java	(revision 0)
+@@ -0,0 +1,14 @@
++package org.mockito.exceptions.verification;
++
++import org.mockito.exceptions.base.MockitoException;
++
++public class SmartNullPointerException extends MockitoException {
++
++    public SmartNullPointerException(String message, Throwable t) {
++        super(message, t);
++    }
++
++    public SmartNullPointerException(String message) {
++        super(message);
++    }
++}
+Index: src/org/mockito/Mockito.java
+===================================================================
+--- src/org/mockito/Mockito.java	(revision 939)
++++ src/org/mockito/Mockito.java	(working copy)
+@@ -6,6 +6,7 @@
+ 
+ import java.util.Arrays;
+ 
++import org.mockito.configuration.ReturnValues;
+ import org.mockito.exceptions.Reporter;
+ import org.mockito.exceptions.misusing.NotAMockException;
+ import org.mockito.internal.MockHandler;
+@@ -14,6 +15,8 @@
+ import org.mockito.internal.progress.NewOngoingStubbing;
+ import org.mockito.internal.progress.OngoingStubbing;
+ import org.mockito.internal.progress.ThreadSafeMockingProgress;
++import org.mockito.internal.returnvalues.SmartNullReturnValues;
++import org.mockito.internal.returnvalues.UsingGlobalConfigReturnValues;
+ import org.mockito.internal.stubbing.DoesNothing;
+ import org.mockito.internal.stubbing.Returns;
+ import org.mockito.internal.stubbing.Stubber;
+@@ -419,6 +422,9 @@
+ @SuppressWarnings("unchecked")
+ public class Mockito extends Matchers {
+     
++    public static final ReturnValues USING_GLOBAL_CONFIG = new UsingGlobalConfigReturnValues();
++    public static final ReturnValues SMART_NULLS = new SmartNullReturnValues();
++    
+     private static final Reporter REPORTER = new Reporter();
+     static final MockingProgress MOCKING_PROGRESS = new ThreadSafeMockingProgress();
+ 
+@@ -432,7 +438,7 @@
+      * @return mock object
+      */
+     public static <T> T mock(Class<T> classToMock) {
+-        return mock(classToMock, null);
++        return mock(classToMock, (String)null);
+     }
+     
+     /**
+@@ -450,16 +456,34 @@
+      * @return mock object
+      */
+     public static <T> T mock(Class<T> classToMock, String name) {
+-        return MockUtil.createMock(classToMock, MOCKING_PROGRESS, name, null);
++        return mock(classToMock, name, null, USING_GLOBAL_CONFIG);
+     }
++    
++    /**
++     * Creates mock with a specified strategy for its return values.
++     *
++     * <p>This can be helpful for working with legacy systems.</p>
++     * 
++     * <p>See examples in javadoc for {@link Mockito} class</p>
++     * 
++     * @param classToMock class or interface to mock
++     * @return mock object
++     */
++    public static <T> T mock(Class<T> classToMock, ReturnValues returnValues) {
++        return mock(classToMock, null, (T)null, returnValues);
++    }
++    
++    private static <T> T mock(Class<T> classToMock, String name, T delegate, ReturnValues returnValues) {
++        return MockUtil.createMock(classToMock, MOCKING_PROGRESS, name, delegate, returnValues);
++    }
+ 
+     /**
+      * Creates a spy of the real object. The spy calls <b>real</b> methods unless they are stubbed.
+-     * <p>
+-     * Real spies should be used <b>carefully and occasionally</b>, for example when dealing with legacy code.
+-     * <p>
+-     * Spying on real objects is often associated with "partial mocking" concept.
+-     * <p>
++     *
++     * <p>Real spies should be used <b>carefully and occasionally</b>, for example when dealing with legacy code.</p>
++     *
++     * <p>Spying on real objects is often associated with "partial mocking" concept.</p>
++     *
+      * Example:
+      * 
+      * <pre>
+@@ -507,7 +531,7 @@
+      * @return a spy of the real object
+      */
+     public static <T> T spy(T object) {
+-        return MockUtil.createMock((Class<T>) object.getClass(), MOCKING_PROGRESS, null, object);
++        return mock((Class<T>) object.getClass(), null, object, USING_GLOBAL_CONFIG);
+     }
+ 
+     /**
+Index: src/org/mockito/internal/returnvalues/SmartNullReturnValues.java
+===================================================================
+--- src/org/mockito/internal/returnvalues/SmartNullReturnValues.java	(revision 0)
++++ src/org/mockito/internal/returnvalues/SmartNullReturnValues.java	(revision 0)
+@@ -0,0 +1,29 @@
++package org.mockito.internal.returnvalues;
++
++import java.lang.reflect.Method;
++
++import net.sf.cglib.proxy.InvocationHandler;
++import net.sf.cglib.proxy.Proxy;
++
++import org.mockito.configuration.ReturnValues;
++import org.mockito.exceptions.cause.UndesiredInvocation;
++import org.mockito.exceptions.verification.SmartNullPointerException;
++import org.mockito.internal.configuration.DefaultReturnValues;
++import org.mockito.invocation.InvocationOnMock;
++
++public class SmartNullReturnValues implements ReturnValues {
++
++    private final ReturnValues delegate = new DefaultReturnValues();
++
++    public Object valueFor(InvocationOnMock invocation) {
++        final Class<?> type = invocation.getMethod().getReturnType();
++        if (type.isPrimitive()) {
++            return delegate.valueFor(invocation);
++        }
++        return Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, new InvocationHandler() {
++            Exception whenCreated = new UndesiredInvocation("Unstubbed method was invoked here");
++            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
++                throw new SmartNullPointerException("oops", whenCreated);
++            }});
++    }
++}
+Index: src/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValues.java
+===================================================================
+--- src/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValues.java	(revision 0)
++++ src/org/mockito/internal/returnvalues/UsingGlobalConfigReturnValues.java	(revision 0)
+@@ -0,0 +1,14 @@
++/**
++ * 
++ */
++package org.mockito.internal.returnvalues;
++
++import org.mockito.configuration.ReturnValues;
++import org.mockito.internal.configuration.Configuration;
++import org.mockito.invocation.InvocationOnMock;
++
++public final class UsingGlobalConfigReturnValues implements ReturnValues {
++    public Object valueFor(InvocationOnMock invocation) {
++        return Configuration.instance().getReturnValues().valueFor(invocation);
++    }
++}
+\ No newline at end of file
+Index: src/org/mockito/internal/verification/NoMoreInteractionsMode.java
+===================================================================
+--- src/org/mockito/internal/verification/NoMoreInteractionsMode.java	(revision 939)
++++ src/org/mockito/internal/verification/NoMoreInteractionsMode.java	(working copy)
+@@ -21,8 +21,7 @@
+         }
+     }
+ 
+-    @Override
+     public void setMocksToBeVerifiedInOrder(List<Object> mocks) {
+         //do nothing
+     }
+-}
+\ No newline at end of file
++}
+Index: src/org/mockito/internal/MockHandler.java
+===================================================================
+--- src/org/mockito/internal/MockHandler.java	(revision 939)
++++ src/org/mockito/internal/MockHandler.java	(working copy)
+@@ -1,200 +1,206 @@
+-/*
+- * Copyright (c) 2007 Mockito contributors
+- * This program is made available under the terms of the MIT License.
+- */
+-package org.mockito.internal;
+-
+-import java.lang.reflect.Method;
+-import java.util.List;
+-
+-import net.sf.cglib.proxy.MethodProxy;
+-
+-import org.mockito.internal.configuration.Configuration;
+-import org.mockito.internal.creation.MockAwareInterceptor;
+-import org.mockito.internal.invocation.Invocation;
+-import org.mockito.internal.invocation.InvocationMatcher;
+-import org.mockito.internal.invocation.MatchersBinder;
+-import org.mockito.internal.progress.DeprecatedOngoingStubbing;
+-import org.mockito.internal.progress.MockingProgress;
+-import org.mockito.internal.progress.NewOngoingStubbing;
+-import org.mockito.internal.stubbing.DoesNothing;
+-import org.mockito.internal.stubbing.MockitoStubber;
+-import org.mockito.internal.stubbing.Returns;
+-import org.mockito.internal.stubbing.ThrowsException;
+-import org.mockito.internal.stubbing.VoidMethodStubbable;
+-import org.mockito.internal.util.MockUtil;
+-import org.mockito.internal.verification.VerificationMode;
+-import org.mockito.internal.verification.VerificationModeFactory;
+-import org.mockito.internal.verification.VerifyingRecorder;
+-import org.mockito.stubbing.Answer;
+-
+-/**
+- * Invocation handler set on mock objects.
+- *
+- * @param <T> type of mock object to handle
+- */
+-public class MockHandler<T> implements MockAwareInterceptor<T> {
+-
+-    private final VerifyingRecorder verifyingRecorder;
+-    private final MockitoStubber mockitoStubber;
+-    private final MatchersBinder matchersBinder;
+-    private final MockingProgress mockingProgress;
+-    private final String mockName;
+-
+-    private T instance;
+-
+-    public MockHandler(String mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder) {
+-        this.mockName = mockName;
+-        this.mockingProgress = mockingProgress;
+-        this.matchersBinder = matchersBinder;
+-        this.mockitoStubber = new MockitoStubber(mockingProgress);
+-
+-        verifyingRecorder = new VerifyingRecorder();
+-    }
+-    
+-    public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+-        if (mockitoStubber.hasAnswersForStubbing()) {
+-            //stubbing voids with stubVoid() or doAnswer() style
+-            Invocation invocation = new Invocation(proxy, method, args, mockingProgress.nextSequenceNumber());
+-            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(invocation);
+-            mockitoStubber.setMethodForStubbing(invocationMatcher);
+-            return null;
+-        }
+-        
+-        VerificationMode verificationMode = mockingProgress.pullVerificationMode();
+-        mockingProgress.validateState();
+-
+-        Invocation invocation = new Invocation(proxy, method, args, mockingProgress.nextSequenceNumber());
+-        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(invocation);
+-
+-        if (verificationMode != null) {
+-            //verifying
+-            verifyingRecorder.verify(invocationMatcher, verificationMode);
+-            return null;
+-        }
+-
+-        mockitoStubber.setInvocationForPotentialStubbing(invocationMatcher);
+-        verifyingRecorder.recordInvocation(invocationMatcher.getInvocation());
+-
+-        mockingProgress.reportOngoingStubbing(new OngoingStubbingImpl());
+-
+-        Answer<?> answer = mockitoStubber.findAnswerFor(invocation);
+-        if (answer != null) {
+-            return answer.answer(invocation);
+-        } else if (MockUtil.isMock(instance)) {
+-            return Configuration.instance().getReturnValues().valueFor(invocation);
+-        } else {
+-            return methodProxy.invoke(instance, args);
+-        }
+-    }
+-
+-    public void verifyNoMoreInteractions() {
+-        verifyingRecorder.verify(VerificationModeFactory.noMoreInteractions());
+-    }
+-
+-    public VoidMethodStubbable<T> voidMethodStubbable(T mock) {
+-        return new VoidMethodStubbableImpl(mock);
+-    }
+-
+-    public void setInstance(T instance) {
+-        this.instance = instance;
+-    }
+-
+-    public List<Invocation> getRegisteredInvocations() {
+-        return verifyingRecorder.getRegisteredInvocations();
+-    }
+-
+-    public String getMockName() {
+-        return mockName;
+-    }
+-
+-    private final class VoidMethodStubbableImpl implements VoidMethodStubbable<T> {
+-        private final T mock;
+-
+-        public VoidMethodStubbableImpl(T mock) {
+-            this.mock = mock;
+-        }
+-
+-        public VoidMethodStubbable<T> toThrow(Throwable throwable) {
+-            mockitoStubber.addAnswerForVoidMethod(new ThrowsException(throwable));
+-            return this;
+-        }
+-
+-        public VoidMethodStubbable<T> toReturn() {
+-            mockitoStubber.addAnswerForVoidMethod(new DoesNothing());
+-            return this;
+-        }
+-
+-        public VoidMethodStubbable<T> toAnswer(Answer<?> answer) {
+-            mockitoStubber.addAnswerForVoidMethod(answer);
+-            return this;
+-        }
+-
+-        public T on() {
+-            return mock;
+-        }
+-    }
+-
+-    private class OngoingStubbingImpl implements NewOngoingStubbing<T>, DeprecatedOngoingStubbing<T> {
+-        public NewOngoingStubbing<T> thenReturn(Object value) {
+-            return thenAnswer(new Returns(value));
+-        }
+-
+-        public NewOngoingStubbing<T> thenThrow(Throwable throwable) {
+-            return thenAnswer(new ThrowsException(throwable));
+-        }
+-
+-        public NewOngoingStubbing<T> thenAnswer(Answer<?> answer) {
+-            verifyingRecorder.eraseLastInvocation();
+-            mockitoStubber.addAnswer(answer);
+-            return new ConsecutiveStubbing();
+-        }
+-
+-        public DeprecatedOngoingStubbing<T> toReturn(Object value) {
+-            return toAnswer(new Returns(value));
+-        }
+-
+-        public DeprecatedOngoingStubbing<T> toThrow(Throwable throwable) {
+-            return toAnswer(new ThrowsException(throwable));
+-        }
+-
+-        public DeprecatedOngoingStubbing<T> toAnswer(Answer<?> answer) {
+-            verifyingRecorder.eraseLastInvocation();
+-            mockitoStubber.addAnswer(answer);
+-            return new ConsecutiveStubbing();
+-        }
+-    }
+-
+-    private class ConsecutiveStubbing implements NewOngoingStubbing<T>, DeprecatedOngoingStubbing<T> {
+-        public NewOngoingStubbing<T> thenReturn(Object value) {
+-            return thenAnswer(new Returns(value));
+-        }
+-
+-        public NewOngoingStubbing<T> thenThrow(Throwable throwable) {
+-            return thenAnswer(new ThrowsException(throwable));
+-        }
+-
+-        public NewOngoingStubbing<T> thenAnswer(Answer<?> answer) {
+-            mockitoStubber.addConsecutiveAnswer(answer);
+-            return this;
+-        }
+-        
+-        public DeprecatedOngoingStubbing<T> toReturn(Object value) {
+-            return toAnswer(new Returns(value));
+-        }
+-
+-        public DeprecatedOngoingStubbing<T> toThrow(Throwable throwable) {
+-            return toAnswer(new ThrowsException(throwable));
+-        }
+-
+-        public DeprecatedOngoingStubbing<T> toAnswer(Answer<?> answer) {
+-            mockitoStubber.addConsecutiveAnswer(answer);
+-            return this;
+-        }
+-    }    
+-    
+-    @SuppressWarnings("unchecked")
+-    public void setAnswersForStubbing(List<Answer> answers) {
+-        mockitoStubber.setAnswersForStubbing(answers);
+-    }
++/*
++ * Copyright (c) 2007 Mockito contributors
++ * This program is made available under the terms of the MIT License.
++ */
++package org.mockito.internal;
++
++import java.lang.reflect.Method;
++import java.util.List;
++
++import net.sf.cglib.proxy.MethodProxy;
++
++import org.mockito.configuration.ReturnValues;
++import org.mockito.internal.creation.MockAwareInterceptor;
++import org.mockito.internal.invocation.Invocation;
++import org.mockito.internal.invocation.InvocationMatcher;
++import org.mockito.internal.invocation.MatchersBinder;
++import org.mockito.internal.progress.DeprecatedOngoingStubbing;
++import org.mockito.internal.progress.MockingProgress;
++import org.mockito.internal.progress.NewOngoingStubbing;
++import org.mockito.internal.returnvalues.UsingGlobalConfigReturnValues;
++import org.mockito.internal.stubbing.DoesNothing;
++import org.mockito.internal.stubbing.MockitoStubber;
++import org.mockito.internal.stubbing.Returns;
++import org.mockito.internal.stubbing.ThrowsException;
++import org.mockito.internal.stubbing.VoidMethodStubbable;
++import org.mockito.internal.util.MockUtil;
++import org.mockito.internal.verification.VerificationMode;
++import org.mockito.internal.verification.VerificationModeFactory;
++import org.mockito.internal.verification.VerifyingRecorder;
++import org.mockito.stubbing.Answer;
++
++/**
++ * Invocation handler set on mock objects.
++ *
++ * @param <T> type of mock object to handle
++ */
++public class MockHandler<T> implements MockAwareInterceptor<T> {
++
++    private final VerifyingRecorder verifyingRecorder;
++    private final MockitoStubber mockitoStubber;
++    private final MatchersBinder matchersBinder;
++    private final MockingProgress mockingProgress;
++    private final String mockName;
++    private final ReturnValues defaultReturnValues;
++
++    private T instance;
++
++    public MockHandler(String mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder) {
++        this(mockName, mockingProgress, matchersBinder, new UsingGlobalConfigReturnValues());
++    }
++    
++    public MockHandler(String mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder, ReturnValues returnValues) {
++        this.mockName = mockName;
++        this.mockingProgress = mockingProgress;
++        this.matchersBinder = matchersBinder;
++        this.mockitoStubber = new MockitoStubber(mockingProgress);
++        verifyingRecorder = new VerifyingRecorder();
++        this.defaultReturnValues = returnValues;
++    }
++    
++    public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
++        if (mockitoStubber.hasAnswersForStubbing()) {
++            //stubbing voids with stubVoid() or doAnswer() style
++            Invocation invocation = new Invocation(proxy, method, args, mockingProgress.nextSequenceNumber());
++            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(invocation);
++            mockitoStubber.setMethodForStubbing(invocationMatcher);
++            return null;
++        }
++        
++        VerificationMode verificationMode = mockingProgress.pullVerificationMode();
++        mockingProgress.validateState();
++
++        Invocation invocation = new Invocation(proxy, method, args, mockingProgress.nextSequenceNumber());
++        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(invocation);
++
++        if (verificationMode != null) {
++            //verifying
++            verifyingRecorder.verify(invocationMatcher, verificationMode);
++            return null;
++        }
++
++        mockitoStubber.setInvocationForPotentialStubbing(invocationMatcher);
++        verifyingRecorder.recordInvocation(invocationMatcher.getInvocation());
++
++        mockingProgress.reportOngoingStubbing(new OngoingStubbingImpl());
++
++        Answer<?> answer = mockitoStubber.findAnswerFor(invocation);
++        if (answer != null) {
++            return answer.answer(invocation);
++        } else if (MockUtil.isMock(instance)) {
++            return defaultReturnValues.valueFor(invocation);
++        } else {
++            return methodProxy.invoke(instance, args);
++        }
++    }
++
++    public void verifyNoMoreInteractions() {
++        verifyingRecorder.verify(VerificationModeFactory.noMoreInteractions());
++    }
++
++    public VoidMethodStubbable<T> voidMethodStubbable(T mock) {
++        return new VoidMethodStubbableImpl(mock);
++    }
++
++    public void setInstance(T instance) {
++        this.instance = instance;
++    }
++
++    public List<Invocation> getRegisteredInvocations() {
++        return verifyingRecorder.getRegisteredInvocations();
++    }
++
++    public String getMockName() {
++        return mockName;
++    }
++
++    private final class VoidMethodStubbableImpl implements VoidMethodStubbable<T> {
++        private final T mock;
++
++        public VoidMethodStubbableImpl(T mock) {
++            this.mock = mock;
++        }
++
++        public VoidMethodStubbable<T> toThrow(Throwable throwable) {
++            mockitoStubber.addAnswerForVoidMethod(new ThrowsException(throwable));
++            return this;
++        }
++
++        public VoidMethodStubbable<T> toReturn() {
++            mockitoStubber.addAnswerForVoidMethod(new DoesNothing());
++            return this;
++        }
++
++        public VoidMethodStubbable<T> toAnswer(Answer<?> answer) {
++            mockitoStubber.addAnswerForVoidMethod(answer);
++            return this;
++        }
++
++        public T on() {
++            return mock;
++        }
++    }
++
++    private class OngoingStubbingImpl implements NewOngoingStubbing<T>, DeprecatedOngoingStubbing<T> {
++        public NewOngoingStubbing<T> thenReturn(Object value) {
++            return thenAnswer(new Returns(value));
++        }
++
++        public NewOngoingStubbing<T> thenThrow(Throwable throwable) {
++            return thenAnswer(new ThrowsException(throwable));
++        }
++
++        public NewOngoingStubbing<T> thenAnswer(Answer<?> answer) {
++            verifyingRecorder.eraseLastInvocation();
++            mockitoStubber.addAnswer(answer);
++            return new ConsecutiveStubbing();
++        }
++
++        public DeprecatedOngoingStubbing<T> toReturn(Object value) {
++            return toAnswer(new Returns(value));
++        }
++
++        public DeprecatedOngoingStubbing<T> toThrow(Throwable throwable) {
++            return toAnswer(new ThrowsException(throwable));
++        }
++
++        public DeprecatedOngoingStubbing<T> toAnswer(Answer<?> answer) {
++            verifyingRecorder.eraseLastInvocation();
++            mockitoStubber.addAnswer(answer);
++            return new ConsecutiveStubbing();
++        }
++    }
++
++    private class ConsecutiveStubbing implements NewOngoingStubbing<T>, DeprecatedOngoingStubbing<T> {
++        public NewOngoingStubbing<T> thenReturn(Object value) {
++            return thenAnswer(new Returns(value));
++        }
++
++        public NewOngoingStubbing<T> thenThrow(Throwable throwable) {
++            return thenAnswer(new ThrowsException(throwable));
++        }
++
++        public NewOngoingStubbing<T> thenAnswer(Answer<?> answer) {
++            mockitoStubber.addConsecutiveAnswer(answer);
++            return this;
++        }
++        
++        public DeprecatedOngoingStubbing<T> toReturn(Object value) {
++            return toAnswer(new Returns(value));
++        }
++
++        public DeprecatedOngoingStubbing<T> toThrow(Throwable throwable) {
++            return toAnswer(new ThrowsException(throwable));
++        }
++
++        public DeprecatedOngoingStubbing<T> toAnswer(Answer<?> answer) {
++            mockitoStubber.addConsecutiveAnswer(answer);
++            return this;
++        }
++    }    
++    
++    @SuppressWarnings("unchecked")
++    public void setAnswersForStubbing(List<Answer> answers) {
++        mockitoStubber.setAnswersForStubbing(answers);
++    }
+ }
+\ No newline at end of file
+Index: src/org/mockito/internal/util/MockUtil.java
+===================================================================
+--- src/org/mockito/internal/util/MockUtil.java	(revision 939)
++++ src/org/mockito/internal/util/MockUtil.java	(working copy)
+@@ -8,6 +8,7 @@
+ import net.sf.cglib.proxy.Enhancer;
+ import net.sf.cglib.proxy.Factory;
+ 
++import org.mockito.configuration.ReturnValues;
+ import org.mockito.exceptions.Reporter;
+ import org.mockito.exceptions.misusing.NotAMockException;
+ import org.mockito.internal.MockHandler;
+@@ -18,12 +19,12 @@
+ 
+ public class MockUtil {
+     
+-    public static <T> T createMock(Class<T> classToMock, MockingProgress progress, String mockName, T optionalInstance) {
++    public static <T> T createMock(Class<T> classToMock, MockingProgress progress, String mockName, T optionalInstance, ReturnValues returnValues) {
+         validateType(classToMock);
+         if (mockName == null) {
+             mockName = toInstanceName(classToMock);
+         }
+-        MockHandler<T> mockHandler = new MockHandler<T>(mockName, progress, new MatchersBinder());
++        MockHandler<T> mockHandler = new MockHandler<T>(mockName, progress, new MatchersBinder(), returnValues);
+         MethodInterceptorFilter<MockHandler<T>> filter = new MethodInterceptorFilter<MockHandler<T>>(classToMock, mockHandler);
+         
+         T mock = (T) ClassImposterizer.INSTANCE.imposterise(filter, classToMock);

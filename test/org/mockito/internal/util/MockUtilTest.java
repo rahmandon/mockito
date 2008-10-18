@@ -55,7 +55,7 @@ public class MockUtilTest extends TestBase {
     }
     
     public static class CustomReturnValues implements ReturnValues {
-        private final String customResult = "custom result";
+        public final String customResult = "custom result";
         public Object valueFor(InvocationOnMock invocation) {
             return customResult;
         }
