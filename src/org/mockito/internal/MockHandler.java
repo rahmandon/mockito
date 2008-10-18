@@ -9,7 +9,7 @@ import java.util.List;
 
 import net.sf.cglib.proxy.MethodProxy;
 
-import org.mockito.internal.configuration.Configuration;
+import org.mockito.configuration.ReturnValues;
 import org.mockito.internal.creation.MockAwareInterceptor;
 import org.mockito.internal.invocation.Invocation;
 import org.mockito.internal.invocation.InvocationMatcher;
@@ -17,6 +17,7 @@ import org.mockito.internal.invocation.MatchersBinder;
 import org.mockito.internal.progress.DeprecatedOngoingStubbing;
 import org.mockito.internal.progress.MockingProgress;
 import org.mockito.internal.progress.NewOngoingStubbing;
+import org.mockito.internal.returnvalues.UsingGlobalConfigReturnValues;
 import org.mockito.internal.stubbing.DoesNothing;
 import org.mockito.internal.stubbing.MockitoStubber;
 import org.mockito.internal.stubbing.Returns;
@@ -40,16 +41,21 @@ public class MockHandler<T> implements MockAwareInterceptor<T> {
     private final MatchersBinder matchersBinder;
     private final MockingProgress mockingProgress;
     private final String mockName;
+    private final ReturnValues defaultReturnValues;
 
     private T instance;
 
     public MockHandler(String mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder) {
+        this(mockName, mockingProgress, matchersBinder, new UsingGlobalConfigReturnValues());
+    }
+    
+    public MockHandler(String mockName, MockingProgress mockingProgress, MatchersBinder matchersBinder, ReturnValues returnValues) {
         this.mockName = mockName;
         this.mockingProgress = mockingProgress;
         this.matchersBinder = matchersBinder;
         this.mockitoStubber = new MockitoStubber(mockingProgress);
-
         verifyingRecorder = new VerifyingRecorder();
+        this.defaultReturnValues = returnValues;
     }
     
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -82,7 +88,7 @@ public class MockHandler<T> implements MockAwareInterceptor<T> {
         if (answer != null) {
             return answer.answer(invocation);
         } else if (MockUtil.isMock(instance)) {
-            return Configuration.instance().getReturnValues().valueFor(invocation);
+            return defaultReturnValues.valueFor(invocation);
         } else {
             return methodProxy.invoke(instance, args);
         }

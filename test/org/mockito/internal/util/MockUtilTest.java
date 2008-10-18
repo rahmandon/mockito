@@ -4,6 +4,8 @@
  */
 package org.mockito.internal.util;
 
+import static org.hamcrest.CoreMatchers.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,16 +14,18 @@ import net.sf.cglib.proxy.NoOp;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.configuration.ReturnValues;
 import org.mockito.exceptions.base.MockitoException;
 import org.mockito.exceptions.misusing.NotAMockException;
+import org.mockito.internal.progress.MockingProgressImpl;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockitoutil.TestBase;
 
 public class MockUtilTest extends TestBase {
 
-    @SuppressWarnings("unchecked")
     @Test 
     public void shouldGetHandler() {
-        List mock = Mockito.mock(List.class);
+        List<?> mock = Mockito.mock(List.class);
         assertNotNull(MockUtil.getMockHandler(mock));
     }
 
@@ -48,5 +52,19 @@ public class MockUtilTest extends TestBase {
     public void shouldValidateMock() {
         assertFalse(MockUtil.isMock("i mock a mock"));
         assertTrue(MockUtil.isMock(Mockito.mock(List.class)));
+    }
+    
+    public static class CustomReturnValues implements ReturnValues {
+        private final String customResult = "custom result";
+        public Object valueFor(InvocationOnMock invocation) {
+            return customResult;
+        }
+    }
+    
+    @Test
+    public void shouldUseCustomReturnValues() throws Exception {
+        CustomReturnValues returnValues = new CustomReturnValues();
+        List<?> mock = MockUtil.createMock(List.class, new MockingProgressImpl(), null, null, returnValues);
+        assertThat(mock.toString(), is("custom result"));
     }
 }

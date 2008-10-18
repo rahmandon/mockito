@@ -10,6 +10,7 @@ import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
 import org.mockito.StateMaster;
+import org.mockito.configuration.experimental.ConfigurationSupport;
 
 /**
  * the easiest way to make sure that tests clean up invalid state is to require
@@ -20,6 +21,7 @@ public class TestBase extends Assert {
     @Before
     public void init() {
         StateMaster.validate();
+        ConfigurationSupport.getConfiguration().resetReturnValues();
         MockitoAnnotations.initMocks(this);
     }
     

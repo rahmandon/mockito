@@ -6,6 +6,7 @@ package org.mockito;
 
 import java.util.Arrays;
 
+import org.mockito.configuration.ReturnValues;
 import org.mockito.exceptions.Reporter;
 import org.mockito.exceptions.misusing.NotAMockException;
 import org.mockito.internal.MockHandler;
@@ -14,6 +15,8 @@ import org.mockito.internal.progress.MockingProgress;
 import org.mockito.internal.progress.NewOngoingStubbing;
 import org.mockito.internal.progress.OngoingStubbing;
 import org.mockito.internal.progress.ThreadSafeMockingProgress;
+import org.mockito.internal.returnvalues.SmartNullReturnValues;
+import org.mockito.internal.returnvalues.UsingGlobalConfigReturnValues;
 import org.mockito.internal.stubbing.DoesNothing;
 import org.mockito.internal.stubbing.Returns;
 import org.mockito.internal.stubbing.Stubber;
@@ -419,6 +422,9 @@ import org.mockito.stubbing.Answer;
 @SuppressWarnings("unchecked")
 public class Mockito extends Matchers {
     
+    public static final ReturnValues USING_GLOBAL_CONFIG = new UsingGlobalConfigReturnValues();
+    public static final ReturnValues SMART_NULLS = new SmartNullReturnValues();
+    
     private static final Reporter REPORTER = new Reporter();
     static final MockingProgress MOCKING_PROGRESS = new ThreadSafeMockingProgress();
 
@@ -432,7 +438,7 @@ public class Mockito extends Matchers {
      * @return mock object
      */
     public static <T> T mock(Class<T> classToMock) {
-        return mock(classToMock, null);
+        return mock(classToMock, (String) null);
     }
     
     /**
@@ -450,16 +456,34 @@ public class Mockito extends Matchers {
      * @return mock object
      */
     public static <T> T mock(Class<T> classToMock, String name) {
-        return MockUtil.createMock(classToMock, MOCKING_PROGRESS, name, null);
+        return mock(classToMock, name, null, USING_GLOBAL_CONFIG);
+    }
+    
+    /**
+     * Creates mock with a specified strategy for its return values.
+     *
+     * <p>This can be helpful for working with legacy systems.</p>
+     * 
+     * <p>See examples in javadoc for {@link Mockito} class</p>
+     * 
+     * @param classToMock class or interface to mock
+     * @return mock object
+     */
+    public static <T> T mock(Class<T> classToMock, ReturnValues returnValues) {
+        return mock(classToMock, null, (T) null, returnValues);
+    }
+    
+    private static <T> T mock(Class<T> classToMock, String name, T delegate, ReturnValues returnValues) {
+        return MockUtil.createMock(classToMock, MOCKING_PROGRESS, name, delegate, returnValues);
     }
 
     /**
      * Creates a spy of the real object. The spy calls <b>real</b> methods unless they are stubbed.
-     * <p>
-     * Real spies should be used <b>carefully and occasionally</b>, for example when dealing with legacy code.
-     * <p>
-     * Spying on real objects is often associated with "partial mocking" concept.
-     * <p>
+     *
+     * <p>Real spies should be used <b>carefully and occasionally</b>, for example when dealing with legacy code.</p>
+     *
+     * <p>Spying on real objects is often associated with "partial mocking" concept.</p>
+     *
      * Example:
      * 
      * <pre>
@@ -507,7 +531,7 @@ public class Mockito extends Matchers {
      * @return a spy of the real object
      */
     public static <T> T spy(T object) {
-        return MockUtil.createMock((Class<T>) object.getClass(), MOCKING_PROGRESS, null, object);
+        return mock((Class<T>) object.getClass(), null, object, USING_GLOBAL_CONFIG);
     }
 
     /**

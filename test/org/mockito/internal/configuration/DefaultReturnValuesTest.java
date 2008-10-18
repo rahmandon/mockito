@@ -20,7 +20,10 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mockitoutil.TestBase;
+
+import static org.hamcrest.CoreMatchers.*;
 
 public class DefaultReturnValuesTest extends TestBase {
     
@@ -49,6 +52,15 @@ public class DefaultReturnValuesTest extends TestBase {
         assertNull(values.returnValueFor(String.class));
     }
     
+    interface HasPrimitives {
+        boolean booleanMethod();
+        char charMethod();
+        int intMethod();
+        long longMethod();
+        float floatMethod();
+        double doubleMethod();
+    }
+    
     @Test public void shouldReturnPrimitive() {
         DefaultReturnValues values = new DefaultReturnValues();
         
@@ -60,5 +72,13 @@ public class DefaultReturnValuesTest extends TestBase {
         assertEquals(0, values.returnValueFor(Long.TYPE));
         assertEquals(0, values.returnValueFor(Float.TYPE));
         assertEquals(0, values.returnValueFor(Double.TYPE));
+        
+        HasPrimitives mock = Mockito.mock(HasPrimitives.class);
+        assertThat(mock.booleanMethod(), is(false));
+        assertThat(mock.charMethod(), is((char) 0));
+        assertThat(mock.intMethod(), is((int) 0));
+        assertThat(mock.longMethod(), is((long) 0));
+        assertThat(mock.floatMethod(), is((float) 0));
+        assertThat(mock.doubleMethod(), is((double) 0));
     }
 }
