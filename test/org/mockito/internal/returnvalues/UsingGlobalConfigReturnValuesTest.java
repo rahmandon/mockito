@@ -1,5 +1,6 @@
 package org.mockito.internal.returnvalues;
 
+import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.configuration.experimental.ConfigurationSupport;
@@ -29,5 +30,10 @@ public class UsingGlobalConfigReturnValuesTest extends TestBase {
         
         // same shop now returns Cheddar
         assertEquals(Cheese.Cheddar, mockShop.getCheese());
+    }
+    
+    @After
+    public void resetReturnValues() {
+        ConfigurationSupport.getConfiguration().resetReturnValues();
     }
 }
