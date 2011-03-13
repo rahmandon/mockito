@@ -1,17 +1,12 @@
 package org.mockito.internal.util.reflection;
 
-import static org.mockito.Mockito.mock;
+import org.mockito.exceptions.Reporter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-import org.mockito.exceptions.Reporter;
+import static org.mockito.Mockito.mock;
 
 public class ConstructorInitializer {
 
@@ -77,7 +72,6 @@ public class ConstructorInitializer {
 				.getConstructors());
 		Collections.sort(constructors, new Comparator<Constructor<?>>() {
 
-			@Override
 			public int compare(Constructor<?> o1, Constructor<?> o2) {
 				return o2.getParameterTypes().length
 						- o1.getParameterTypes().length;

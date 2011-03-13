@@ -1,13 +1,13 @@
 package org.mockitousage.annotation;
 
-import static org.mockito.Mockito.when;
-
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockitousage.examples.use.ArticleCalculator;
 import org.mockitousage.examples.use.ArticleManager;
 import org.mockitoutil.TestBase;
+
+import static org.mockito.Mockito.when;
 
 public class InjectMocksTest extends TestBase {
 
@@ -24,8 +24,8 @@ public class InjectMocksTest extends TestBase {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInnerMockShouldRaiseAnExceptionThatChangesOuterMockBehavior() {
-		when(calculator.countArticles("new")).thenThrow(
-				new IllegalArgumentException());
+		when(calculator.countArticles("new")).thenThrow(new IllegalArgumentException());
+
 		articleManager.updateArticleCounters("new");
 	}
 

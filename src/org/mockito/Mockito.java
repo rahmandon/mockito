@@ -7,23 +7,15 @@ package org.mockito;
 import org.mockito.internal.MockitoCore;
 import org.mockito.internal.creation.MockSettingsImpl;
 import org.mockito.internal.debugging.MockitoDebuggerImpl;
-import org.mockito.internal.stubbing.answers.AnswerReturnValuesAdapter;
-import org.mockito.internal.stubbing.answers.CallsRealMethods;
-import org.mockito.internal.stubbing.answers.DoesNothing;
-import org.mockito.internal.stubbing.answers.Returns;
-import org.mockito.internal.stubbing.answers.ThrowsException;
+import org.mockito.internal.stubbing.answers.*;
 import org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValues;
 import org.mockito.internal.stubbing.defaultanswers.ReturnsMoreEmptyValues;
 import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.mockito.stubbing.DeprecatedOngoingStubbing;
-import org.mockito.stubbing.OngoingStubbing;
-import org.mockito.stubbing.Stubber;
-import org.mockito.stubbing.VoidMethodStubbable;
-import org.mockito.verification.VerificationWithTimeout;
+import org.mockito.stubbing.*;
 import org.mockito.verification.Timeout;
 import org.mockito.verification.VerificationMode;
+import org.mockito.verification.VerificationWithTimeout;
 
 /**
  * <p align="left"><img src="logo.jpg"/></p>
@@ -59,6 +51,7 @@ import org.mockito.verification.VerificationMode;
  *      <a href="#21">21. New annotations: &#064;Captor, &#064;Spy, &#064;InjectMocks (Since 1.8.3) </a><br/>
  *      <a href="#22">22. (New) Verification with timeout (Since 1.8.5) </a><br/>
  *      <a href="#23">23. (**New**) Automatic instantiation of &#064;Spy, &#064;InjectMocks fields (Since 1.9)</a><br/>
+ *      <a href="#24">24. (**New**) Inline mock creation and stubbing (Since 1.9)</a><br/>
  * </b>
  * 
  * <p>
@@ -716,6 +709,14 @@ import org.mockito.verification.VerificationMode;
  * &#064;InjectMocks LocalPub;
  * </pre>
  *
+ * <h3> id="24">24. (**New**) Inline mock creation and stubbing (Since 1.9)
+ * <p>
+ * Mockito will now allow you to create mocks when stubbing. Example :
+ * <pre>
+ * Car car = when(mock(Car.class).shiftGear()).thenThrow(EngineNotStarted.class).getMock();
+ * </pre>
+ *
+ *
  */
 @SuppressWarnings("unchecked")
 public class Mockito extends Matchers {
@@ -1366,6 +1367,27 @@ public class Mockito extends Matchers {
     }
 
     /**
+     * Use doThrow() when you want to stub the void method to throw exception of specified class.
+     * <p>
+     * A new exception instance will be created for each method invocation.
+     * <p>
+     * Stubbing voids requires different approach from {@link Mockito#when(Object)} because the compiler does not like void methods inside brackets...
+     * <p>
+     * Example:
+     *
+     * <pre>
+     *   doThrow(RuntimeException.class).when(mock).someVoidMethod();
+     * </pre>
+     *
+     * @param toBeThrown to be thrown when the stubbed method is called
+     * @return stubber - to select a method for stubbing
+     */
+    public static Stubber doThrow(Class<? extends Throwable> toBeThrown) {
+        return MOCKITO_CORE.doAnswer(new ThrowsExceptionClass(toBeThrown));
+    }
+
+
+    /**
      * Use doCallRealMethod() when you want to call the real implementation of a method.
      * <p>
      * As usual you are going to read <b>the partial mock warning</b>:
@@ -1770,4 +1792,5 @@ public class Mockito extends Matchers {
     static MockitoDebugger debug() {
         return new MockitoDebuggerImpl();
     }
+
 }

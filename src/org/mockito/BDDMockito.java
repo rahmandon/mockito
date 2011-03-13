@@ -64,26 +64,41 @@ public class BDDMockito extends Mockito {
          * See original {@link OngoingStubbing#thenAnswer(Answer)}
          */
         BDDMyOngoingStubbing<T> willAnswer(Answer<?> answer);
-        
+
+        /**
+         * See original {@link OngoingStubbing#then(Answer)}
+         */
+        BDDMyOngoingStubbing<T> will(Answer<?> answer);
+
         /**
          * See original {@link OngoingStubbing#thenReturn(Object)}
          */
         BDDMyOngoingStubbing<T> willReturn(T value);
-        
+
         /**
-         * See original {@link OngoingStubbing#thenReturn(Object, Object...)}
+         * See original {@link OngoingStubbing#thenReturn(Object, Object[])}
          */
         BDDMyOngoingStubbing<T> willReturn(T value, T... values);
-        
+
         /**
          * See original {@link OngoingStubbing#thenThrow(Throwable...)}
          */
         BDDMyOngoingStubbing<T> willThrow(Throwable... throwables);
 
         /**
+         * See original {@link OngoingStubbing#thenThrow(Class[])}
+         */
+        BDDMyOngoingStubbing<T> willThrow(Class<? extends Throwable>... throwableClasses);
+
+        /**
          * See original {@link OngoingStubbing#thenCallRealMethod()}
          */
         BDDMyOngoingStubbing<T> willCallRealMethod();
+
+        /**
+         * See original {@link OngoingStubbing#getMock()}
+         */
+        <M> M getMock();
     }
     
     public static class BDDOngoingStubbingImpl<T> implements BDDMyOngoingStubbing<T> {
@@ -95,35 +110,52 @@ public class BDDMockito extends Mockito {
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDMyOngoingStubbing#willAnswer(org.mockito.stubbing.Answer)
+         * @see BDDMockito.BDDMyOngoingStubbing#willAnswer(Answer)
          */
         public BDDMyOngoingStubbing<T> willAnswer(Answer<?> answer) {
             return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenAnswer(answer));
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDMyOngoingStubbing#willReturn(java.lang.Object)
+         * @see BDDMockito.BDDMyOngoingStubbing#will(Answer)
+         */
+        public BDDMyOngoingStubbing<T> will(Answer<?> answer) {
+            return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.then(answer));
+        }
+
+        /* (non-Javadoc)
+         * @see BDDMockito.BDDMyOngoingStubbing#willReturn(java.lang.Object)
          */
         public BDDMyOngoingStubbing<T> willReturn(T value) {
             return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenReturn(value));
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDMyOngoingStubbing#willReturn(java.lang.Object, T[])
+         * @see BDDMockito.BDDMyOngoingStubbing#willReturn(java.lang.Object, T[])
          */
         public BDDMyOngoingStubbing<T> willReturn(T value, T... values) {
             return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenReturn(value, values));
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDMyOngoingStubbing#willThrow(java.lang.Throwable[])
+         * @see BDDMockito.BDDMyOngoingStubbing#willThrow(java.lang.Throwable[])
          */
         public BDDMyOngoingStubbing<T> willThrow(Throwable... throwables) {
             return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenThrow(throwables));
         }
+        /* (non-Javadoc)
+         * @see BDDMockito.BDDMyOngoingStubbing#willThrow(java.lang.Class[])
+         */
+        public BDDMyOngoingStubbing<T> willThrow(Class<? extends Throwable>... throwableClasses) {
+            return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenThrow(throwableClasses));
+        }
 
         public BDDMyOngoingStubbing<T> willCallRealMethod() {
             return new BDDOngoingStubbingImpl<T>(mockitoOngoingStubbing.thenCallRealMethod());
+        }
+
+        public <M> M getMock() {
+            return (M) mockitoOngoingStubbing.getMock();
         }
     }
     
@@ -157,7 +189,12 @@ public class BDDMockito extends Mockito {
          * See original {@link Stubber#doThrow(Throwable)}
          */
         BDDStubber willThrow(Throwable toBeThrown);
-        
+
+        /**
+         * See original {@link Stubber#doThrow(Class)}
+         */
+        BDDStubber willThrow(Class<? extends Throwable> toBeThrown);
+
         /**
          * See original {@link Stubber#when(Object)}
          */
@@ -173,37 +210,44 @@ public class BDDMockito extends Mockito {
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDStubber#given(java.lang.Object)
+         * @see BDDMockito.BDDStubber#given(java.lang.Object)
          */
         public <T> T given(T mock) {
             return mockitoStubber.when(mock);
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDStubber#willAnswer(org.mockito.stubbing.Answer)
+         * @see BDDMockito.BDDStubber#willAnswer(Answer)
          */
         public BDDStubber willAnswer(Answer answer) {
             return new BDDStubberImpl(mockitoStubber.doAnswer(answer));
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDStubber#willNothing()
+         * @see BDDMockito.BDDStubber#willNothing()
          */
         public BDDStubber willNothing() {
             return new BDDStubberImpl(mockitoStubber.doNothing());
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDStubber#willReturn(java.lang.Object)
+         * @see BDDMockito.BDDStubber#willReturn(java.lang.Object)
          */
         public BDDStubber willReturn(Object toBeReturned) {
             return new BDDStubberImpl(mockitoStubber.doReturn(toBeReturned));
         }
 
         /* (non-Javadoc)
-         * @see org.mockitousage.customization.BDDMockito.BDDStubber#willThrow(java.lang.Throwable)
+         * @see BDDMockito.BDDStubber#willThrow(java.lang.Throwable)
          */
         public BDDStubber willThrow(Throwable toBeThrown) {
+            return new BDDStubberImpl(mockitoStubber.doThrow(toBeThrown));
+        }
+
+        /* (non-Javadoc)
+         * @see BDDMockito.BDDStubber#willThrow(Class)
+         */
+        public BDDStubber willThrow(Class<? extends Throwable> toBeThrown) {
             return new BDDStubberImpl(mockitoStubber.doThrow(toBeThrown));
         }
     }
@@ -212,6 +256,13 @@ public class BDDMockito extends Mockito {
      * see original {@link Mockito#doThrow(Throwable)}
      */
     public static BDDStubber willThrow(Throwable toBeThrown) {
+        return new BDDStubberImpl(Mockito.doThrow(toBeThrown));
+    }
+
+    /**
+     * see original {@link Mockito#doThrow(Throwable)}
+     */
+    public static BDDStubber willThrow(Class<? extends Throwable> toBeThrown) {
         return new BDDStubberImpl(Mockito.doThrow(toBeThrown));
     }
     

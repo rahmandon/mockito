@@ -4,7 +4,13 @@
  */
 package org.mockitousage.stubbing;
 
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.exceptions.verification.NoInteractionsWanted;
+import org.mockito.exceptions.verification.WantedButNotInvoked;
+import org.mockitoutil.TestBase;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -12,14 +18,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.exceptions.base.MockitoException;
-import org.mockito.exceptions.verification.NoInteractionsWanted;
-import org.mockito.exceptions.verification.WantedButNotInvoked;
-import org.mockitoutil.TestBase;
+import static org.mockito.Mockito.*;
 
-@SuppressWarnings({"serial", "unchecked", "all"})
+@SuppressWarnings({"serial", "unchecked", "all", "deprecation"})
 public class StubbingWithThrowablesTest extends TestBase {
 
     private LinkedList mock;
@@ -105,7 +106,22 @@ public class StubbingWithThrowablesTest extends TestBase {
         } catch (Error e) {
             assertEquals(error, e);
         }
-    }    
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldInstantiateExceptionClassOnInteraction() {
+        when(mock.add(null)).thenThrow(IllegalArgumentException.class);
+
+        mock.add(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldInstantiateExceptionClassWithOngoingStubbingOnInteraction() {
+        Mockito.doThrow(IllegalArgumentException.class).when(mock).add(null);
+
+        mock.add(null);
+    }
     
     @Test(expected=MockitoException.class)
     public void shouldNotAllowSettingInvalidCheckedException() throws Exception {
@@ -114,8 +130,13 @@ public class StubbingWithThrowablesTest extends TestBase {
     
     @Test(expected=MockitoException.class)
     public void shouldNotAllowSettingNullThrowable() throws Exception {
-        when(mock.add("monkey island")).thenThrow(null);
-    }    
+        when(mock.add("monkey island")).thenThrow((Throwable) null);
+    }
+
+    @Test(expected=MockitoException.class)
+    public void shouldNotAllowSettingNullThrowableArray() throws Exception {
+        when(mock.add("monkey island")).thenThrow((Throwable[]) null);
+    }
     
     @Test
     public void shouldMixThrowablesAndReturnsOnDifferentMocks() throws Exception {
@@ -196,8 +217,20 @@ public class StubbingWithThrowablesTest extends TestBase {
         } catch (NoInteractionsWanted e) {}
     }
     
-    private class ExceptionOne extends RuntimeException {};
-    private class ExceptionTwo extends RuntimeException {};
-    private class ExceptionThree extends RuntimeException {};
-    private class ExceptionFour extends RuntimeException {};
+    private class ExceptionOne extends RuntimeException {}
+    private class ExceptionTwo extends RuntimeException {}
+    private class ExceptionThree extends RuntimeException {}
+    private class ExceptionFour extends RuntimeException {}
+
+    public class NaughtyException extends RuntimeException {
+        public NaughtyException() {
+            throw new RuntimeException("boo!");
+        }
+    }
+
+    @Test(expected = NaughtyException.class)
+    public void shouldShowDecentMessageWhenExcepionIsNaughty() throws Exception {
+        when(mock.add("")).thenThrow(NaughtyException.class);
+        mock.add("");
+    }
 }

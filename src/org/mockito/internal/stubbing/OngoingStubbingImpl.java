@@ -24,6 +24,10 @@ public class OngoingStubbingImpl<T> extends BaseStubbing<T> {
         return new ConsecutiveStubbing<T>(invocationContainerImpl);
     }
 
+    public OngoingStubbing<T> then(Answer<?> answer) {
+        return thenAnswer(answer);
+    }
+
     public DeprecatedOngoingStubbing<T> toAnswer(Answer<?> answer) {
         invocationContainerImpl.addAnswer(answer);
         return new ConsecutiveStubbing<T>(invocationContainerImpl);
@@ -32,5 +36,9 @@ public class OngoingStubbingImpl<T> extends BaseStubbing<T> {
     public List<Invocation> getRegisteredInvocations() {
         //TODO interface for tests
         return invocationContainerImpl.getInvocations();
+    }
+
+    public <M> M getMock() {
+        return (M) invocationContainerImpl.invokedMock();
     }
 }

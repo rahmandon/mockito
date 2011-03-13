@@ -4,14 +4,16 @@
  */
 package org.mockitousage.customization;
 
-import static org.mockito.BDDMockito.*;
-
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockitousage.IMethods;
 import org.mockitoutil.TestBase;
+
+import java.util.Set;
+
+import static org.mockito.BDDMockito.*;
 
 public class BDDMockitoTest extends TestBase {
     
@@ -34,6 +36,16 @@ public class BDDMockitoTest extends TestBase {
             fail();
         } catch(RuntimeException e) {}
     }
+
+    @Test
+    public void shouldStubWithThrowableClass() throws Exception {
+        given(mock.simpleMethod("foo")).willThrow(RuntimeException.class);
+
+        try {
+            assertEquals("foo", mock.simpleMethod("foo"));
+            fail();
+        } catch(RuntimeException e) {}
+    }
     
     @Test
     public void shouldStubWithAnswer() throws Exception {
@@ -42,6 +54,16 @@ public class BDDMockitoTest extends TestBase {
                 return (String) invocation.getArguments()[0];
             }});
         
+        assertEquals("foo", mock.simpleMethod("foo"));
+    }
+
+    @Test
+    public void shouldStubWithWillAnswerAlias() throws Exception {
+        given(mock.simpleMethod(anyString())).will(new Answer<String>() {
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return (String) invocation.getArguments()[0];
+            }});
+
         assertEquals("foo", mock.simpleMethod("foo"));
     }
 
@@ -64,7 +86,17 @@ public class BDDMockitoTest extends TestBase {
             fail();
         } catch(RuntimeException e) {}
     }
-    
+
+    @Test
+    public void shouldStubVoidWithExceptionClass() throws Exception {
+        willThrow(RuntimeException.class).given(mock).voidMethod();
+
+        try {
+            mock.voidMethod();
+            fail();
+        } catch(RuntimeException e) {}
+    }
+
     @Test
     public void shouldStubVoidConsecutively() throws Exception {
         willDoNothing()
@@ -76,6 +108,19 @@ public class BDDMockitoTest extends TestBase {
             mock.voidMethod();
             fail();
         } catch(RuntimeException e) {}
+    }
+
+    @Test
+    public void shouldStubVoidConsecutivelyWithExceptionClass() throws Exception {
+        willDoNothing()
+        .willThrow(IllegalArgumentException.class)
+        .given(mock).voidMethod();
+
+        mock.voidMethod();
+        try {
+            mock.voidMethod();
+            fail();
+        } catch(IllegalArgumentException e) {}
     }
     
     @Test
@@ -121,5 +166,14 @@ public class BDDMockitoTest extends TestBase {
         given(dog.bark()).willCallRealMethod();
         //then
         assertEquals("woof", dog.bark());
+    }
+
+    @Test
+    public void shouldAllStubbedMockReferenceAccess() throws Exception {
+        Set expectedMock = mock(Set.class);
+
+        Set returnedMock = given(expectedMock.isEmpty()).willReturn(false).getMock();
+
+        assertEquals(expectedMock, returnedMock);
     }
 }

@@ -11,13 +11,7 @@ import java.util.List;
 
 import org.mockito.exceptions.base.MockitoAssertionError;
 import org.mockito.exceptions.base.MockitoException;
-import org.mockito.exceptions.misusing.InvalidUseOfMatchersException;
-import org.mockito.exceptions.misusing.MissingMethodInvocationException;
-import org.mockito.exceptions.misusing.NotAMockException;
-import org.mockito.exceptions.misusing.NullInsteadOfMockException;
-import org.mockito.exceptions.misusing.UnfinishedStubbingException;
-import org.mockito.exceptions.misusing.UnfinishedVerificationException;
-import org.mockito.exceptions.misusing.WrongTypeOfReturnValue;
+import org.mockito.exceptions.misusing.*;
 import org.mockito.exceptions.verification.ArgumentsAreDifferent;
 import org.mockito.exceptions.verification.NeverWantedButInvoked;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
@@ -85,7 +79,8 @@ public class Reporter {
                 "Also, this error might show up because:",
                 "1. you stub either of: final/private/equals()/hashCode() methods.",
                 "   Those methods *cannot* be stubbed/verified.",
-                "2. inside when() you don't call method on mock but on some other object."
+                "2. inside when() you don't call method on mock but on some other object.",
+                ""
         ));
     }
 
@@ -551,5 +546,16 @@ public class Reporter {
             "   //also, don't forget about MockitoAnnotations.initMocks();",
             "   //and... don't forget about some @Mocks for injection :)",
                 ""), details);
+    }
+
+    public void atMostShouldNotBeUsedWithTimeout() {
+        throw new FriendlyReminderException(join("",
+                "Don't panic! I'm just a friendly reminder!",
+                "timeout() should not be used with atMost() because...",
+                "...it does not make much sense - the test would have passed immediately in concurency",
+                "We kept this method only to avoid compilation errors when upgrading Mockito.",
+                "In future release we will remove timeout(x).atMost(y) from the API.",
+                "If you want to find out more please refer to issue 235",
+                ""));
     }
 }
