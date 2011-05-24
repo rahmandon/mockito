@@ -48,7 +48,7 @@ import static java.lang.annotation.ElementType.FIELD;
  *
  * <b>The field annotated with &#064;InjectMocks must be initialized.</b>
  * <p>
- * <b><code>MockitoAnnotations.injectMocks(this)</code></b> method has to called to initialize annotated objects.
+ * <b><code>MockitoAnnotations.initMocks(this)</code></b> method has to called to initialize annotated objects.
  * <p>
  * In above example, <code>initMocks()</code> is called in &#064;Before (JUnit4) method of test's base class.
  * For JUnit3 <code>initMocks()</code> can go to <code>setup()</code> method of a base class.

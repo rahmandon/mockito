@@ -621,7 +621,7 @@ import org.mockito.verification.VerificationMode;
  * which accepts MockSettings. No worries, you will hardly ever use it.
  * 
  * <pre>
- * List@lt;Object&gt; list = new ArrayList&lt;Object&gt;();
+ * List&lt;Object&gt; list = new ArrayList&lt;Object&gt;();
  * List&lt;Object&gt; spy = mock(ArrayList.class, withSettings()
  *                 .spiedInstance(list)
  *                 .defaultAnswer(CALLS_REAL_METHODS)
