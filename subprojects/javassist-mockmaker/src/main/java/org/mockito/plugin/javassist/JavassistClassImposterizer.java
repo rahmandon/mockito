@@ -64,7 +64,7 @@ public class JavassistClassImposterizer {
 //                }
 //            };
             ProxyFactory proxyFactory = new ProxyFactory();
-            ProxyFactory.classLoaderProvider = new ClassLoaderProvider() {
+            proxyFactory.classLoaderProvider = new ClassLoaderProvider() {
                 public ClassLoader get(ProxyFactory pf) {
                     return SearchingClassLoader.combineLoadersOf(pf.getSuperclass());
                 }

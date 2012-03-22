@@ -1100,18 +1100,6 @@ public class ProxyFactory {
 
         getMethods(hash, superClass, visitedClasses);
         return hash;
-
-//        // JIRA JASSIST-127
-//        // As explained below, 'hash' now uses reduced keys.  We rebuild the map to return
-//        // with full keys as our caller expects.
-//        HashMap fullKeysHash = new HashMap(hash.size());
-//        for (Iterator it = hash.values().iterator(); it.hasNext(); ) {
-//            Method m = (Method) it.next();
-//            fullKeysHash.put(m.getName() + ':' + RuntimeSupport.makeDescriptor(m), m);
-//
-//        }
-//
-//        return fullKeysHash;
     }
 
     private static void getMethods(HashMap hash, Class clazz, Set visitedClasses) {
