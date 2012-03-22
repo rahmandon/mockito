@@ -214,31 +214,6 @@ public class ProxyFactory {
      */
     public String writeDirectory;
 
-    /**
-     * A provider for the <strong>current {@link ProxyFactory}</strong> instance that will be used
-     * by <code>createClass()</code> for obtaining a class loader.
-     *
-     * <code>get()</code> on this <code>ClassLoaderProvider</code> object
-     * is called to obtain a class loader.
-     *
-     * <p>The value of this field can be updated for changing the default
-     * implementation for the current ProxyFactory.
-     *
-     * <p>Example:
-     * <ul><pre>
-     * ProxyFactory.instanceClassLoaderProvider = new ProxyFactory.ClassLoaderProvider() {
-     *     public ClassLoader get(ProxyFactory pf) {
-     *         return Thread.currentThread().getContextClassLoader();
-     *     }
-     * };
-     * </pre></ul>
-     *
-     * @see #classLoaderProvider
-     * @since 3.17
-     */
-    public ClassLoaderProvider instanceClassLoaderProvider;
-
-
     private static final Class OBJECT_TYPE = Object.class;
 
     private static final String HOLDER = "_methods_";
@@ -644,10 +619,6 @@ public class ProxyFactory {
      * <p>The value of this field can be updated for changing the default
      * implementation.
      *
-     *
-     * <p>This classLoader provider affects the {@link ProxyFactory}  class scope,
-     * for local or instance provider use the {@link #instanceClassLoaderProvider}.</p>
-     *
      * <p>Example:
      * <ul><pre>
      * ProxyFactory.classLoaderProvider = new ProxyFactory.ClassLoaderProvider() {
@@ -657,10 +628,9 @@ public class ProxyFactory {
      * };
      * </pre></ul>
      *
-     * @see #instanceClassLoaderProvider
      * @since 3.4
      */
-    public static ClassLoaderProvider classLoaderProvider
+    public ClassLoaderProvider classLoaderProvider
         = new ClassLoaderProvider() {
               public ClassLoader get(ProxyFactory pf) {
                   return pf.getClassLoader0();
@@ -668,9 +638,6 @@ public class ProxyFactory {
           };
 
     protected ClassLoader getClassLoader() {
-        if (instanceClassLoaderProvider != null) {
-            return instanceClassLoaderProvider.get(this);
-        }
         return classLoaderProvider.get(this);
     }
 
