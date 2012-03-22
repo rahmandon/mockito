@@ -55,7 +55,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -1030,61 +1029,32 @@ public class ProxyFactory {
             cf.addMethod(delegator);
         }
 
-        Method bridgeDelegate = getBrideDelegate(meth);
-        if (bridgeDelegate != null) {
-            MethodInfo bridgeDelegator = makeBridgeDelegator(
-                    meth, desc, cp, thisClassname, bridgeDelegate);
-            cf.addMethod(bridgeDelegator);
-        } else {
-            MethodInfo forwarder
+        MethodInfo forwarder
                 = makeForwarder(thisClassname, meth, desc, cp, declClass,
-                               delegatorName, index);
-            cf.addMethod(forwarder);
+                                delegatorName, index);
+        if (isBridgeWithSameSignature(meth)) {
+            forwarder.setAccessFlags(forwarder.getAccessFlags() | AccessFlag.BRIDGE | AccessFlag.SYNTHETIC);
         }
+        cf.addMethod(forwarder);
     }
 
-    private MethodInfo makeBridgeDelegator(Method asBridge, String desc, ConstPool constPool, String thisClassname, Method bridgeDelegate) {
-        MethodInfo delegator = new MethodInfo(constPool, asBridge.getName(), desc);
-        delegator.setAccessFlags(
-                Modifier.FINAL | Modifier.PUBLIC | AccessFlag.BRIDGE | AccessFlag.SYNTHETIC
-                        | (asBridge.getModifiers() & ~(Modifier.PRIVATE
-                                                     | Modifier.PROTECTED
-                                                     | Modifier.ABSTRACT
-                                                     | Modifier.NATIVE
-                                                     | Modifier.SYNCHRONIZED))
-        );
-        setThrows(delegator, constPool, asBridge);
-        Bytecode code = new Bytecode(constPool, 0, 0);
-        code.addAload(0);
-        int s = addLoadParameters(code, asBridge.getParameterTypes(), 1);
-        code.addInvokespecial(
-                thisClassname,
-                bridgeDelegate.getName(),
-                RuntimeSupport.makeDescriptor(bridgeDelegate.getParameterTypes(), bridgeDelegate.getReturnType())
-        );
-        addReturn(code, bridgeDelegate.getReturnType());
-        code.setMaxLocals(++s);
-        delegator.setCodeAttribute(code.toCodeAttribute());
-        return delegator;
-    }
+    private boolean isBridgeWithSameSignature(Method forwarder) {
+        for (Iterator<Map.Entry> iterator = signatureMethods.iterator(); iterator.hasNext(); ) {
+            Map.Entry signatureMethod = iterator.next();
+            Method method = (Method) signatureMethod.getValue();
+            boolean sameName = forwarder.getName().equals(method.getName());
+            boolean sameArguments = Arrays.deepEquals(forwarder.getParameterTypes(), method.getParameterTypes());
+            boolean covariant = forwarder.getReturnType() != method.getReturnType()
+                    && forwarder.getReturnType().isAssignableFrom(method.getReturnType());
 
-    private Method getBrideDelegate(Method forwarder) {
-        for (Iterator<Entry> iterator = signatureMethods.iterator(); iterator.hasNext(); ) {
-            Entry signatureMethod = iterator.next();
-            if(!forwarder.equals(signatureMethod.getValue())) {
-                Method method = (Method) signatureMethod.getValue();
-
-                boolean sameName = forwarder.getName().equals(method.getName());
-                boolean sameArguments = Arrays.deepEquals(forwarder.getParameterTypes(), method.getParameterTypes());
-                boolean covariant = forwarder.getReturnType().isAssignableFrom(method.getReturnType());
-                if(sameName && sameArguments && covariant) {
-                    return method;
-                }
+            if (sameName && sameArguments && covariant) {
+                return true;
             }
         }
 
-        return null;
+        return true;
     }
+
 
     private void makeConstructors(String thisClassName, ClassFile cf,
             ConstPool cp, String classname) throws CannotCompileException
