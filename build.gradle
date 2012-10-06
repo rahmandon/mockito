@@ -28,7 +28,7 @@ More info.
 task release
 
 if (gradle.startParameter.taskNames == ['release']) {
-    gradle.startParameter.taskNames = ['releaseDocs', 'updateLicenseHeaders', 'assertCleanCopy', 'uploadToGoogle']
+    gradle.startParameter.taskNames = ['updateLicenseHeaders', 'assertCleanCopy', 'uploadToGoogle']
 }
 
 
@@ -40,7 +40,7 @@ gradle.taskGraph.whenReady {
 }
 
 //TODO SF read from the file
-def version = '1.9.5-rc1'
+def version = '1.9.5'
 
 task uploadToGoogle(type: UploadToGoogle) {
     mockitoZip = file("target/mockito-${version}.zip")
@@ -143,10 +143,15 @@ task updateLicenseHeaders << {
 }
 
 task releaseDocs {
+  ext {
+    docsRepo = file("../docs")
+    docsDir = file("$docsRepo/$version")
+  }
+  onlyIf {
+    !docsDir.exists() //assume docs are already released
+  }
   doLast {
-    def docsRepo = file("../docs")
-    //TODO SF validate if this is a correct repo via hg
-    def docsDir = file("$docsRepo/$version")
+    //TODO SF validate if this is a correct repo via hg  
     assert docsDir.directory || docsDir.mkdirs() : "Expected to find cloned 'docs' repo at: '$docsRepo'. Problems creating docs output dir."
 
     exec {
