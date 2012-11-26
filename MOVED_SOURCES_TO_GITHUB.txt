@@ -1,0 +1,3 @@
+We've decided to move sources over Github.
+You will find them at this location : https://github.com/mockito/mockito
+
