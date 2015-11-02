@@ -1,0 +1,1 @@
+Page [moved](https://github.com/mockito/mockito/wiki/FAQ)

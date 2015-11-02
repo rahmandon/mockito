@@ -1,0 +1,1 @@
+Page moved to: https://github.com/mockito/mockito/wiki/Declaring-mockito-dependency
